@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+import rootLoc
 
 class Mo_Bus:
     def __init__(self):
@@ -11,25 +12,16 @@ class Mo_Bus:
         self.XinFuLi_list = []
         self.All_count = 0
 
-        MYDIR = os.path.dirname(__file__)
         # 先由本地載入Bus Stop Data
         self.bus_stop_list = self.load_bus_stop()
-        # 取得所有Bus數據
+
         self.get_bus_list()
-        # 分類
-        self.get_all_bus_list()
-
-
 
     def load_bus_stop(self):
-        with open(os.getcwd() + '\Module\data.json') as bus_stop_data:
+        with open(rootLoc.get_root() + '\Module\data.json') as bus_stop_data:
             load_dict = json.load(bus_stop_data)
             # print(load_dict)
-            return load_dict
-
-    def get_all_bus_list(self):
-        for item in self.bus_list:
-            self.all_bus_list.append(item['routeName'])
+        return load_dict
 
     def get_bus_list(self):
         url = "https://bis.dsat.gov.mo:37812/macauweb/getRouteAndCompanyList.html"
@@ -62,7 +54,12 @@ class Mo_Bus:
         rs = requests.post(url, data=playload, headers=headerS)
         data = json.loads(rs.content.decode())
         # print(data)
-        return data
+        return data['data']['routeInfo']
+
+    def get_all_bus_list(self):
+        for item in self.bus_list:
+            self.all_bus_list.append(item['routeName'])
+        return self.all_bus_list
 
     def get_AoBa(self):
         for item in self.bus_list:
@@ -77,33 +74,28 @@ class Mo_Bus:
             # print(item)
             if item['color'] == "Blue":
                 self.XinFuLi_list.append(item['routeName'])
-        print(self.XinFuLi_list)
+        # print(self.XinFuLi_list)
         return self.XinFuLi_list
 
-    def bus_count(self, data):
-        # print(data)
-        count = 0
-        for item in data['data']['routeInfo']:
-            # print(item)
-            try:
-                for bus in item['busInfo']:
-                    count = count + 1;
-                    print(bus['busPlate'] + "目前在 : " + self.bus_stop_list[item['staCode'].split('/',1)[0]])
-            except IndexError:
-                pass
+    def get_bus_stop_list(self, bus_state):
+        bs_stop = []
+        for item in bus_state:
+            bs_stop.append(item['staCode'])
+        return bs_stop
 
-        self.All_count += count
-        print("共 {} 部".format(count))
-        print("-----------------------------------")
+    # def bus_count(self, data):
+    #     # print(data)
+    #     count = 0
+    #     for item in data['data']['routeInfo']:
+    #         # print(item)
+    #         try:
+    #             for bus in item['busInfo']:
+    #                 count = count + 1
+    #                 print(bus['busPlate'] + "目前在 : " + self.bus_stop_list[item['staCode'].split('/',1)[0]])
+    #         except IndexError:
+    #             pass
+    #
+    #     self.All_count += count
+    #     print("共 {} 部".format(count))
+    #     print("-----------------------------------")
 
-
-
-# if __name__ == '__main__':
-#     obj = Mo_Bus()
-#     print(obj.homedir)
-#     print(obj.all_bus_list)
-#
-#     for bus in obj.all_bus_list:
-#         obj.bus_count(obj.get_bus_status(bus))
-#
-#     print("全澳目前共有 {} 部巴士正在行駛".format(obj.All_count))
